@@ -15,11 +15,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yaml
-    permissions:
-      contents: read
-
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
