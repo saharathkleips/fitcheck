@@ -1,14 +1,15 @@
 import { useState } from "react";
 import Camera from "./Camera.tsx";
-import { ImageAnalyzer } from './ImageAnalyzer.tsx';
 import PhotoVault from './PhotoVault.tsx';
-import OutfitComposer from "./OutfitComposer";
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
 import { CameraCapture } from "./components/CameraCapture.tsx";
 import { WeatherSummary } from "./components/WeatherSummary.tsx";
 import OutfitComposerWithStyle from "./components/OutfitComposerWithStyle.tsx";
+import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
+import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
+import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -20,6 +21,8 @@ function App() {
   return (
     <>
       <SettingsProvider>
+        <AssessmentProvider>
+          <FitCheckProvider>
         <div className="min-h-screen bg-gray-900 text-white font-inter p-4 sm:p-8 relative">
           <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 opacity-60 pointer-events-none" />
           <div className="max-w-8xl mx-auto relative z-10">
@@ -44,21 +47,7 @@ function App() {
                 <CameraCapture />
 
                 {/* AI Assessment Section */}
-                <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
-                  <h2 className="text-xl font-semibold text-fuchsia-400 mb-3">
-                    AI Fit Assessment
-                  </h2>
-                  <div className="bg-gray-700/50 p-4 rounded-lg min-h-[150px] border border-gray-600">
-                    <p className="text-gray-300">
-                      Your assessment results will appear here after submission.
-                    </p>
-                    <p className="text-gray-400 text-sm mt-2">
-                      Placeholder: "Based on the clear skies and 72°F
-                      temperature, your light jacket and jeans are an optimal
-                      choice for today's casual outdoor event."
-                    </p>
-                  </div>
-                </div>
+                <AssessmentSummary/>
               </div>
 
               {/* Right Column: Placeholder/Info */}
@@ -75,7 +64,6 @@ function App() {
           <div className="card">
             <div className="flex flex-col items-center justify-center">
 
-          <ImageAnalyzer />
               <Camera />
               <PhotoVault />
           {/* <OutfitComposer/> --> OutfitComposerWithStyle  */}
@@ -83,6 +71,8 @@ function App() {
             </div>
           </div>
         </div>
+        </FitCheckProvider>
+        </AssessmentProvider>
       </SettingsProvider>
     </>
   );
