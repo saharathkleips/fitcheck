@@ -8,6 +8,7 @@ import { Settings } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
 import { CameraCapture } from "./components/CameraCapture.tsx";
 import { WeatherSummary } from "./components/WeatherSummary.tsx";
+import OutfitComposerWithStyle from "./components/OutfitComposerWithStyle.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -77,7 +78,8 @@ function App() {
           <ImageAnalyzer />
               <Camera />
               <PhotoVault />
-          <OutfitComposer/>
+          {/* <OutfitComposer/> --> OutfitComposerWithStyle  */}
+          <OutfitComposerWithStyle />
             </div>
           </div>
         </div>
