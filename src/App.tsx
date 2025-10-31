@@ -54,9 +54,12 @@ function App() {
                     <StyleSelector />
                   </div>
                 </main>
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                 <Wardrobe />
                 <Prompt />
                 <AnalyzeWardrobeButton />
+                </div>
+
               </div>
 
               {/* Settings Sheet Modal */}
