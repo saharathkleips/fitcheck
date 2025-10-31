@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { analyzeImage } from "./api/openai"
 import { useSettings } from "./hooks/useSettings";
 import { useWeather, type TodayWeather } from "./hooks/useWeather";
+import { summarizeWeather } from "./lib/utils";
 
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
@@ -120,11 +121,3 @@ export function ImageAnalyzer() {
   )
 }
 
-function summarizeWeather(w: TodayWeather): string {
-  return (
-    `${w.city} | ${Math.round(w.temp)}°C (feels ${Math.round(
-      w.feelsLike
-    )}°C), ${w.description}, ` +
-    `humidity ${w.humidity}%, wind ${w.windSpeed} m/s`
-  );
-}

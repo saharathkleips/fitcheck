@@ -1,6 +1,9 @@
 // src/components/OutfitComposer.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { analyzeOutfits } from "./api/openai"; // ← 경로 수정
+import { useSettings } from "./hooks/useSettings";
+import { useWeather } from "./hooks/useWeather";
+import { summarizeWeather } from "./lib/utils";
 
 type PhotoMeta = { id: string; name: string; type: string; size: number; lastModified: number; tags?: string[] };
 type PhotoRecord = { meta: PhotoMeta; blob: Blob; thumb?: Blob };
@@ -48,12 +51,12 @@ function Thumb({ blob, alt, height = 100 }: { blob?: Blob; alt: string; height?:
   );
 }
 
-type OutfitComposerProps = {
-  weatherSummary?: string;
-  apiKey?: string;
-};
 
-export default function OutfitComposer({ weatherSummary = "", apiKey }: OutfitComposerProps) {
+export default function OutfitComposer() {
+  const {gptApiKey, weatherApiKey} = useSettings();
+  const {weather} = useWeather(weatherApiKey);
+  
+  
   const [items, setItems] = useState<PhotoRecord[]>([]);
   const [pick, setPick] = useState<Record<string, boolean>>({});
   const [prompt, setPrompt] = useState(
@@ -91,8 +94,8 @@ export default function OutfitComposer({ weatherSummary = "", apiKey }: OutfitCo
 
       // ✅ 날씨 + API 키 반영
       const text = await analyzeOutfits(selectedBlobs, prompt, {
-        apiKey,
-        weatherSummary,
+        apiKey: gptApiKey,
+        weatherSummary: weather ? summarizeWeather(weather) : undefined,
         maxImages: 6,
         detail: "auto",
       });
@@ -134,15 +137,6 @@ export default function OutfitComposer({ weatherSummary = "", apiKey }: OutfitCo
           }}
         />
       </div>
-
-      {/* 날씨 프롬프트 미리보기 */}
-      {weatherSummary && (
-        <p style={{ marginTop: 8, fontSize: 13, opacity: 0.7 }}>
-          현재 날씨가 프롬프트에 자동 반영됩니다:  
-          <br />
-          <code>{weatherSummary}</code>
-        </p>
-      )}
 
       {/* 실행 버튼 */}
       <div
