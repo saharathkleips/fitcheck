@@ -52,14 +52,11 @@ function App() {
                     <AssessmentSummary />
 
                     {/* ✅ 사진 업로드 & 선택 (여기서 선택된 Blob[]을 상태로 보관) */}
-                    <PhotoSelector
+                    {/* <PhotoSelector
                       title="Your Wardrobe Photos"
                       onChange={setSelectedBlobs}
-                    />
+                    /> */}
 
-                    
-          
-          <WardrobeSelector/>
                   </div>
 
                   {/* Right Column: Weather + Style & Outfit Compose */}
@@ -78,6 +75,7 @@ function App() {
                       // apiKey={...}  // 필요 시 주입, 없으면 openai.ts의 env 사용
                     />
                   </div>
+                <WardrobeSelector/>
                 </main>
               </div>
 
