@@ -18,7 +18,7 @@ function App() {
   const closeSettings = () => setIsSettingsOpen(false);
 
   return (
-    <>
+    <div className="min-h-screen overflow-x-hidden overscroll-none touch-pan-y">
       <SettingsProvider>
         <AssessmentProvider>
           <FitCheckProvider>
@@ -72,7 +72,7 @@ function App() {
         </FitCheckProvider>
         </AssessmentProvider>
       </SettingsProvider>
-    </>
+    </div>
   );
 }
 
