@@ -78,7 +78,7 @@ ${prompt}
 
   return (
     <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
-      <h2 className="text-xl font-semibold text-cyan-400 mb-4">Select Context Item</h2>
+      <h2 className="text-xl font-semibold text-cyan-400 mb-4">분위기</h2>
 
       {/* 스타일 카드 */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
