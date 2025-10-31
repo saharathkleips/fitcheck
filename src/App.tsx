@@ -47,7 +47,8 @@ function ImageAnalyzer() {
       const result = await analyzeImage(file) // 기본 프롬프트 사용
       // const result = await analyzeImage(file, prompt) // <- 이런 식으로 확장 가능
       setResponse(result)
-    } catch (err) {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (err: any) {
       setError(err?.message ?? '알 수 없는 에러가 발생했습니다.')
       setResponse('')
     } finally {
