@@ -10,19 +10,8 @@ import OutfitComposerWithStyle from "./components/OutfitComposerWithStyle.tsx";
 import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+import { WardrobeSelector } from "./components/Wardrobe.tsx";
 import PhotoSelector from "./components/PhotoSelector.tsx";
-=======
-import { WardrobeSelector } from "./components/Wardrobe.tsx";
-
-
->>>>>>> Stashed changes
-=======
-import { WardrobeSelector } from "./components/Wardrobe.tsx";
-
-
->>>>>>> Stashed changes
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -67,6 +56,10 @@ function App() {
                       title="Your Wardrobe Photos"
                       onChange={setSelectedBlobs}
                     />
+
+                    
+          
+          <WardrobeSelector/>
                   </div>
 
                   {/* Right Column: Weather + Style & Outfit Compose */}
@@ -91,31 +84,7 @@ function App() {
               {/* Settings Sheet Modal */}
               <SettingsSheet isOpen={isSettingsOpen} onClose={closeSettings} />
 
-              {/* 기존 데모 섹션(필요 없으면 제거 가능) */}
-              <div className="card">
-                <div className="flex flex-col items-center justify-center">
-                  <Camera />
-                  <PhotoVault />
-                </div>
-              </div>
-<<<<<<< Updated upstream
-=======
-            </main>
-          </div>
-          <WardrobeSelector/>
-          
-          {/* Settings Sheet Modal */}
-          <SettingsSheet isOpen={isSettingsOpen} onClose={closeSettings} />
-
-
-          <div className="card">
-            <div className="flex flex-col items-center justify-center">
-
-              <PhotoVault />
-          {/* <OutfitComposer/> --> OutfitComposerWithStyle  */}
-          <OutfitComposerWithStyle />
->>>>>>> Stashed changes
-            </div>
+</div>
           </FitCheckProvider>
         </AssessmentProvider>
       </SettingsProvider>
