@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react"
 import { analyzeImage } from "./api/openai"
 import { useSettings } from "./hooks/useSettings";
-import { useWeather, type TodayWeather } from "./hooks/useWeather";
+import { useWeather } from "./hooks/useWeather";
 import { summarizeWeather } from "./lib/utils";
 
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
 export function ImageAnalyzer() {
-  const {gptApiKey, weatherApiKey} = useSettings();
+  const {weatherApiKey} = useSettings();
 
   const {weather} = useWeather(weatherApiKey)
 
@@ -53,8 +53,8 @@ export function ImageAnalyzer() {
        prompt
      ].filter(Boolean).join("\n\n")
 
-     const result = await analyzeImage(file, finalPrompt, gptApiKey) // ✅ 합쳐진 프롬프트/키 전달
-      setResponse(result)
+     const result = await analyzeImage(file, finalPrompt) // ✅ 합쳐진 프롬프트/키 전달
+      setResponse(result as any)
       /* eslint-disable @typescript-eslint/no-explicit-any */
     
     } catch (err: any) {

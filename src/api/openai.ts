@@ -20,6 +20,8 @@ export async function analyzeImage(file: File, prompt = "이 이미지의 내용
       },
     ],
   };
+
+  return body;
 }
   
 // src/api/openai.ts

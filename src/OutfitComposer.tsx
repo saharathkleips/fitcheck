@@ -1,5 +1,5 @@
 // src/components/OutfitComposer.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { analyzeOutfits } from "./api/openai"; // ← 경로 수정
 import { useSettings } from "./hooks/useSettings";
 import { useWeather } from "./hooks/useWeather";
