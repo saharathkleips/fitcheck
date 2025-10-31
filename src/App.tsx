@@ -1,10 +1,10 @@
-// src/App.tsx
-import { useState, useEffect } from 'react'
+
+import { useEffect, useState } from 'react';
 import { analyzeImage } from './api/openai'
-import reactLogo from './assets/react.svg'
-import appLogo from '/favicon.svg'
-import PWABadge from './PWABadge.tsx'
-import './App.css'
+import "./App.css";
+import { Button } from "./components/ui/button.tsx";
+import { Input } from "./components/ui/input.tsx";
+import { base64logo } from "./logo.ts";
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
 function ImageAnalyzer() {
@@ -47,7 +47,7 @@ function ImageAnalyzer() {
       const result = await analyzeImage(file) // 기본 프롬프트 사용
       // const result = await analyzeImage(file, prompt) // <- 이런 식으로 확장 가능
       setResponse(result)
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message ?? '알 수 없는 에러가 발생했습니다.')
       setResponse('')
     } finally {
@@ -111,40 +111,43 @@ function ImageAnalyzer() {
   )
 }
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={appLogo} className="logo" alt="fitcheck logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <h1>fitcheck</h1>
-
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-
-
-      <ImageAnalyzer />
-      <PWABadge />
-    </>
-  )
+function submit(image: string) {
+  console.log(image);
 }
 
-export default App
+function captureImage(): string {
+  return "base64..."
+}
+
+function App() {
+  return (
+    <>
+      <h1>fitcheck</h1>
+      <Input
+        placeholder="API Key"
+        className="flex items-center justify-center"
+      />
+      <div className="card">
+        <div className="flex flex-col items-center justify-center">
+          <img className="max-h-100 max-w-100" src={base64logo} />
+
+
+          <ImageAnalyzer />
+          <Button onClick={() => captureImage}>
+            Capture Image
+          </Button>
+          
+          <Button
+            type="submit"
+            variant="outline"
+            onClick={() => submit(base64logo)}
+          >
+            Submit
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default App;
