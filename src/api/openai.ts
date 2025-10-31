@@ -1,7 +1,28 @@
-// src/api/openai.ts
-export async function analyzeImage(file: File, prompt = "이 이미지의 내용을 설명해줘.") {
-  const dataUrl = await fileToDataURL(file); // "data:image/png;base64,..." 전체 문자열
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+};
 
+type ChatChoice = {
+  index: number;
+  message: ChatMessage;
+  finish_reason?: string;
+};
+
+type ChatCompletionResponse = {
+  id: string;
+  object: "chat.completion";
+  created: number;
+  model: string;
+  choices: ChatChoice[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};
+
+export async function analyzeImage(apiKey: string, file: string, prompt = "이 이미지의 내용을 설명해줘.") {
   const body = {
     model: "gpt-4o-mini",
     messages: [
@@ -12,7 +33,7 @@ export async function analyzeImage(file: File, prompt = "이 이미지의 내용
           {
             type: "image_url",
             image_url: {
-              url: dataUrl,    // <-- 문자열이 아닌 객체로!
+              url: file,    // <-- 문자열이 아닌 객체로!
               detail: "auto",  // "low" | "high" | "auto" (옵션)
             },
           },
@@ -21,7 +42,44 @@ export async function analyzeImage(file: File, prompt = "이 이미지의 내용
     ],
   };
 
-  return body;
+  // 3) 타임아웃 컨트롤러
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    // 4) fetch 호출
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    // 5) 에러 처리
+    if (!res.ok) {
+      const errTxt = await res.text();
+      // OpenAI 표준 에러 포맷을 최대한 친절하게 노출
+      throw new Error(
+        `OpenAI API error (${res.status} ${res.statusText}): ${errTxt}`
+      );
+    }
+
+    // 6) 응답 파싱
+    const data = (await res.json()) as ChatCompletionResponse;
+    const content = data?.choices?.[0]?.message?.content ?? "";
+    return content;
+    // eslint-disable-next-line
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error(`요청 타임아웃 — 네트워크 상태를 확인하세요.`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(id);
+  }
 }
   
 // src/api/openai.ts
@@ -144,16 +202,4 @@ async function maybeCompressToJpeg(src: Blob | File, maxSide = 1024, quality = 0
     for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     return new Blob([u8], { type: mime });
   }
-}
-
-
-
-// DataURL 전체를 반환 (mime 포함)
-function fileToDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(fr.result as string); // "data:image/jpeg;base64,AAAA..."
-    fr.onerror = reject;
-    fr.readAsDataURL(file);
-  });
 }

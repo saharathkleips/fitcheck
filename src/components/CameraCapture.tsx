@@ -1,4 +1,5 @@
-import { Camera, Send } from "lucide-react";
+import { AnalyzeButton } from "@/AnalyzeButton";
+import { Camera } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type CameraState = "no-permission" | "ask-permission" | "video" | "captured";
@@ -50,7 +51,6 @@ export function CameraCapture() {
     if (!v || !stream) return;
     v.srcObject = stream; 
     v.muted = true;
-    // @ts-ignore
     v.playsInline = true;
     v.play().catch(() => {});
     return () => { v.srcObject = null; };
@@ -124,14 +124,7 @@ export function CameraCapture() {
         </button>
 
         {/* Submit Button (Disabled unless image is captured) */}
-        <button
-          disabled={status !== "captured"}
-          className="flex-1 flex items-center justify-center p-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition transform hover:scale-[1.02] shadow-lg shadow-cyan-900/50 disabled:bg-gray-700 disabled:text-gray-400 disabled:shadow-none"
-          aria-label="Submit captured image for check"
-        >
-          <Send className="w-5 h-5 mr-2" />
-          Fit Check
-        </button>
+        <AnalyzeButton file={capturedImage} prompt= "이 이미지의 내용을 설명해줘." />
       </div>
     </div>
   );

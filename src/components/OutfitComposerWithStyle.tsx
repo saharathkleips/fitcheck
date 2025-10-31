@@ -104,7 +104,7 @@ ${prompt}
 
       const text = await analyzeOutfits(selectedBlobs, fullPrompt, {
         apiKey: gptApiKey,
-        weatherSummary: summarizeWeather(weather),
+        weatherSummary: weather ? summarizeWeather(weather) : undefined,
         maxImages: 6,
         detail: "auto",
       });
@@ -128,7 +128,7 @@ ${prompt}
         <select
           value={styleChoice}
           onChange={(e) => setStyleChoice(e.target.value)}
-          style={{ padding: "6px 10px", borderRadius: 6 }}
+          style={{ padding: "6px 10px",backgroundColor:"#1e1e1e", borderRadius: 6 }}
         >
           <option value="미니멀">미니멀</option>
           <option value="스트릿">스트릿</option>
