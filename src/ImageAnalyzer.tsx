@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { analyzeImage } from "./api/openai"
+import { useSettings } from "./hooks/useSettings";
 
 type ImageAnalyzerProps = {
   extraPrompt?: string;
@@ -7,7 +8,9 @@ type ImageAnalyzerProps = {
 };
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
-export function ImageAnalyzer({ extraPrompt = "", apiKey}:ImageAnalyzerProps) {
+export function ImageAnalyzer({ extraPrompt = ""}:ImageAnalyzerProps) {
+  const {gptApiKey} = useSettings();
+
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('이 이미지의 내용을 설명해줘.')
@@ -50,7 +53,7 @@ export function ImageAnalyzer({ extraPrompt = "", apiKey}:ImageAnalyzerProps) {
        prompt
      ].filter(Boolean).join("\n\n")
 
-     const result = await analyzeImage(file, finalPrompt, apiKey) // ✅ 합쳐진 프롬프트/키 전달
+     const result = await analyzeImage(file, finalPrompt, gptApiKey) // ✅ 합쳐진 프롬프트/키 전달
       setResponse(result)
       /* eslint-disable @typescript-eslint/no-explicit-any */
     
