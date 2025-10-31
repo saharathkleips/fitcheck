@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react"
 import { analyzeImage } from "./api/openai"
+import { useSettings } from "./hooks/useSettings";
+
+type ImageAnalyzerProps = {
+  extraPrompt?: string;
+  apiKey?: string;
+};
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
-export function ImageAnalyzer() {
+export function ImageAnalyzer({ extraPrompt = ""}:ImageAnalyzerProps) {
+  const {gptApiKey} = useSettings();
+
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('이 이미지의 내용을 설명해줘.')
@@ -38,11 +46,17 @@ export function ImageAnalyzer() {
       setLoading(true)
       setError(null)
       setResponse('분석 중입니다...')
-      // analyzeImage 내부 프롬프트를 덮어쓰고 싶다면, analyzeImage에 prompt 인자 추가해도 됨
-      const result = await analyzeImage(file) // 기본 프롬프트 사용
-      // const result = await analyzeImage(file, prompt) // <- 이런 식으로 확장 가능
+
+      // ✅ 날씨 요약(extraPrompt) + 입력 프롬프트(prompt)를 합친다
+     const finalPrompt = [
+       extraPrompt ? `[Weather]\n${extraPrompt}` : "",
+       prompt
+     ].filter(Boolean).join("\n\n")
+
+     const result = await analyzeImage(file, finalPrompt, gptApiKey) // ✅ 합쳐진 프롬프트/키 전달
       setResponse(result)
       /* eslint-disable @typescript-eslint/no-explicit-any */
+    
     } catch (err: any) {
       setError(err?.message ?? '알 수 없는 에러가 발생했습니다.')
       setResponse('')

@@ -47,3 +47,11 @@ export async function fetchWeatherByCity(city: string): Promise<TodayWeather> {
   const json = await res.json();
   return mapResponse(json);
 }
+
+
+// src/api/weather.ts (기존 내용 아래에 추가)
+export function summarizeWeather(w: TodayWeather) {
+  // 프롬프트에 넣기 좋은 한 줄 요약
+  return `${w.city} | ${Math.round(w.temp)}°C (feels ${Math.round(w.feelsLike)}°C), ${w.description}, ` +
+         `humidity ${w.humidity}%, wind ${w.windSpeed} m/s`;
+}

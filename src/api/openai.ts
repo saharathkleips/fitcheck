@@ -1,21 +1,49 @@
 // src/api/openai.ts
-export async function analyzeImage(file: File, prompt = "이 이미지의 내용을 설명해줘.") {
-  const dataUrl = await fileToDataURL(file); // "data:image/png;base64,..." 전체 문자열
+/**
+ * OpenAI 이미지 분석 호출 유틸
+ * - 파일을 DataURL(base64)로 인코드하여 Chat Completions API에 전달
+ * - prompt/모델/디테일/타임아웃/키 오버라이드 지원
+ *
+ * 사용 예:
+ *   const text = await analyzeImage(file, finalPrompt); // .env 키 사용
+ *   const text = await analyzeImage(file, finalPrompt, userInputKey);
+ */
 
+export type AnalyzeOptions = {
+  model?: string;                    // 기본: gpt-4o-mini
+  detail?: "auto" | "low" | "high";  // 기본: auto
+  timeoutMs?: number;                // 기본: 20000 (20s)
+};
+
+export async function analyzeImage(
+  file: File,
+  prompt: string,
+  apiKey?: string,
+  opts: AnalyzeOptions = {}
+): Promise<string> {
+  const key = (apiKey || import.meta.env.VITE_OPENAI_API_KEY) as string | undefined;
+  if (!key) {
+    throw new Error(
+      "OpenAI API Key가 없습니다. .env의 VITE_OPENAI_API_KEY 또는 UI 입력값을 확인하세요."
+    );
+  }
+
+  const model = opts.model ?? "gpt-4o-mini";
+  const detail = opts.detail ?? "auto";
+  const timeoutMs = opts.timeoutMs ?? 20000;
+
+  // 1) 파일 → DataURL
+  const dataUrl = await fileToDataURL(file);
+
+  // 2) 요청 바디
   const body = {
-    model: "gpt-4o-mini",
+    model,
     messages: [
       {
         role: "user",
         content: [
           { type: "text", text: prompt },
-          {
-            type: "image_url",
-            image_url: {
-              url: dataUrl,    // <-- 문자열이 아닌 객체로!
-              detail: "auto",  // "low" | "high" | "auto" (옵션)
-            },
-          },
+          { type: "image_url", image_url: { url: dataUrl, detail } },
         ],
       },
     ],
@@ -56,14 +84,21 @@ export async function analyzeOutfits(
 
   
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
+  // 3) 타임아웃 컨트롤러
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    // 4) fetch 호출
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify(body),
+    });
 
   if (!res.ok) {
     const err = await res.text();
@@ -73,56 +108,51 @@ export async function analyzeOutfits(
   return data.choices[0]?.message?.content ?? "";
 }
 
-
-// Blob/File -> DataURL
-async function blobToDataURL(b: Blob) {
-  return await new Promise<string>((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(fr.result as string);
-    fr.onerror = reject;
-    fr.readAsDataURL(b);
-  });
-}
-
-// (선택) 전송 전 간단 압축: 긴 변 1024, JPEG 0.75
-async function maybeCompressToJpeg(src: Blob | File, maxSide = 1024, quality = 0.75): Promise<Blob> {
-  const img = document.createElement("img");
-  img.src = URL.createObjectURL(src);
-  try { await img.decode(); }
-  catch {
-    await new Promise<void>((ok, err) => { img.onload = () => ok(); img.onerror = () => err(new Error("image load error")); });
-  }
-  const s = Math.min(1, maxSide / Math.max(img.width, img.height));
-  const w = Math.max(1, Math.round(img.width * s));
-  const h = Math.max(1, Math.round(img.height * s));
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  c.getContext("2d")!.drawImage(img, 0, 0, w, h);
-  URL.revokeObjectURL(img.src);
-
-  return await new Promise<Blob>((resolve) => {
-    if (c.toBlob) c.toBlob(b => resolve(b ?? dataURLtoBlob(c.toDataURL("image/jpeg", quality))), "image/jpeg", quality);
-    else resolve(dataURLtoBlob(c.toDataURL("image/jpeg", quality)));
-  });
-
-  function dataURLtoBlob(d: string) {
-    const [m, b64] = d.split(",");
-    const mime = /data:(.*?);/.exec(m)?.[1] || "image/jpeg";
-    const bin = atob(b64);
-    const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return new Blob([u8], { type: mime });
-  }
-}
-
-
-
-// DataURL 전체를 반환 (mime 포함)
-function fileToDataURL(file: File): Promise<string> {
+/** 내부 유틸: 파일 -> DataURL ("data:image/png;base64,....") */
+async function fileToDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
-    fr.onload = () => resolve(fr.result as string); // "data:image/jpeg;base64,AAAA..."
+    fr.onload = () => resolve(fr.result as string);
     fr.onerror = reject;
     fr.readAsDataURL(file);
   });
 }
+
+/** 내부 유틸: 안전한 텍스트 읽기 */
+async function safeReadText(res: Response): Promise<string> {
+  try {
+    return await res.text();
+  } catch {
+    return "<no-body>";
+  }
+}
+
+/** 내부 유틸: 긴 문자열 자르기 */
+function truncate(str: string, n: number) {
+  return str.length > n ? str.slice(0, n) + "..." : str;
+}
+
+/** 최소 타입 (필요 시 확장 가능) */
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+};
+
+type ChatChoice = {
+  index: number;
+  message: ChatMessage;
+  finish_reason?: string;
+};
+
+type ChatCompletionResponse = {
+  id: string;
+  object: "chat.completion";
+  created: number;
+  model: string;
+  choices: ChatChoice[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};

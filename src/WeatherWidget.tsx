@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { fetchWeatherByCoords, fetchWeatherByCity, type TodayWeather } from "./api/weather";
+import { fetchWeatherByCoords, fetchWeatherByCity, type TodayWeather, summarizeWeather } from "./api/weather";
 
-export function WeatherWidget({ fallbackCity = "Seoul" }: { fallbackCity?: string }) {
+export function WeatherWidget({
+  fallbackCity = "Seoul",
+  onReady, // (summary: string) => void
+}: {
+  fallbackCity?: string;
+  onReady?: (summary: string) => void;
+}) {
   const [data, setData] = useState<TodayWeather | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +62,8 @@ export function WeatherWidget({ fallbackCity = "Seoul" }: { fallbackCity?: strin
 
         if (!cancelled) {
           setData(weather);
+          const summary = summarizeWeather(weather);
+          onReady?.(summary);
         }
       } catch (e: any) {
         if (!cancelled) {
