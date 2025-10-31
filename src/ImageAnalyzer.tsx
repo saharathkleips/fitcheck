@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react"
 import { analyzeImage } from "./api/openai"
 import { useSettings } from "./hooks/useSettings";
+import { useWeather, type TodayWeather } from "./hooks/useWeather";
 
-type ImageAnalyzerProps = {
-  extraPrompt?: string;
-  apiKey?: string;
-};
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
-export function ImageAnalyzer({ extraPrompt = ""}:ImageAnalyzerProps) {
-  const {gptApiKey} = useSettings();
+export function ImageAnalyzer() {
+  const {gptApiKey, weatherApiKey} = useSettings();
+
+  const {weather} = useWeather(weatherApiKey)
 
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -49,7 +48,7 @@ export function ImageAnalyzer({ extraPrompt = ""}:ImageAnalyzerProps) {
 
       // ✅ 날씨 요약(extraPrompt) + 입력 프롬프트(prompt)를 합친다
      const finalPrompt = [
-       extraPrompt ? `[Weather]\n${extraPrompt}` : "",
+       weather ? `[Weather]\n${summarizeWeather(weather)}` : "",
        prompt
      ].filter(Boolean).join("\n\n")
 
@@ -119,4 +118,13 @@ export function ImageAnalyzer({ extraPrompt = ""}:ImageAnalyzerProps) {
       )}
     </div>
   )
+}
+
+function summarizeWeather(w: TodayWeather): string {
+  return (
+    `${w.city} | ${Math.round(w.temp)}°C (feels ${Math.round(
+      w.feelsLike
+    )}°C), ${w.description}, ` +
+    `humidity ${w.humidity}%, wind ${w.windSpeed} m/s`
+  );
 }
