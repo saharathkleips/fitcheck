@@ -104,7 +104,7 @@ ${prompt}
 
       const text = await analyzeOutfits(selectedBlobs, fullPrompt, {
         apiKey: gptApiKey,
-        weatherSummary: summarizeWeather(weather),
+        weatherSummary: weather ? summarizeWeather(weather) : undefined,
         maxImages: 6,
         detail: "auto",
       });
