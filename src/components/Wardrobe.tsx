@@ -147,7 +147,7 @@ export const WardrobeSelector = () => {
     }, []);
 
     return (
-        <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+        <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
             <h2 className="text-xl font-semibold text-cyan-400 mb-4 flex items-center">
                 <Shirt className="w-5 h-5 mr-2" /> 디지털 옷장
             </h2>

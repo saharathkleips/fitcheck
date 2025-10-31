@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
-import PhotoVault from './PhotoVault.tsx';
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
@@ -11,7 +10,6 @@ import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
 import { WardrobeSelector } from "./components/Wardrobe.tsx";
-import PhotoSelector from "./components/PhotoSelector.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -51,15 +49,7 @@ function App() {
                     <CameraCapture />
                     <AssessmentSummary />
 
-                    {/* ✅ 사진 업로드 & 선택 (여기서 선택된 Blob[]을 상태로 보관) */}
-                    <PhotoSelector
-                      title="Your Wardrobe Photos"
-                      onChange={setSelectedBlobs}
-                    />
-
-                    
-          
-          <WardrobeSelector/>
+                    <WardrobeSelector />
                   </div>
 
                   {/* Right Column: Weather + Style & Outfit Compose */}
@@ -83,8 +73,7 @@ function App() {
 
               {/* Settings Sheet Modal */}
               <SettingsSheet isOpen={isSettingsOpen} onClose={closeSettings} />
-
-</div>
+            </div>
           </FitCheckProvider>
         </AssessmentProvider>
       </SettingsProvider>
