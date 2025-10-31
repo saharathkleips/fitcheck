@@ -105,8 +105,8 @@ function App() {
               <Camera />
               <PhotoVault />
 
-                        <WeatherWidget fallbackCity="Seoul" />
-          <OutfitComposer/>
+                        <WeatherWidget fallbackCity="Seoul" onReady={setWeatherSummary}/>
+          <OutfitComposer weatherSummary={weatherSummary}/>
             </div>
           </div>
         </div>

@@ -1,21 +1,25 @@
 // src/components/OutfitComposer.tsx
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { analyzeOutfits } from "./api/openai"; // ← 경로 수정
 
 type PhotoMeta = { id: string; name: string; type: string; size: number; lastModified: number; tags?: string[] };
 type PhotoRecord = { meta: PhotoMeta; blob: Blob; thumb?: Blob };
 
+// IndexedDB 열기
 async function openDB(): Promise<IDBDatabase> {
   return await new Promise((res, rej) => {
     const req = indexedDB.open("photos-db", 1);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains("photos")) db.createObjectStore("photos", { keyPath: "meta.id" });
+      if (!db.objectStoreNames.contains("photos"))
+        db.createObjectStore("photos", { keyPath: "meta.id" });
     };
     req.onsuccess = () => res(req.result);
     req.onerror = () => rej(req.error);
   });
 }
+
+// IndexedDB 모든 이미지 불러오기
 async function getAll(): Promise<PhotoRecord[]> {
   const db = await openDB();
   return await new Promise((res, rej) => {
@@ -26,7 +30,7 @@ async function getAll(): Promise<PhotoRecord[]> {
   });
 }
 
-/** 썸네일 전용 자식 컴포넌트: 여기서만 훅 사용 */
+// 썸네일 렌더링
 function Thumb({ blob, alt, height = 100 }: { blob?: Blob; alt: string; height?: number }) {
   const [url, setUrl] = useState<string>();
   useEffect(() => {
@@ -44,16 +48,22 @@ function Thumb({ blob, alt, height = 100 }: { blob?: Blob; alt: string; height?:
   );
 }
 
-export default function OutfitComposer() {
+type OutfitComposerProps = {
+  weatherSummary?: string;
+  apiKey?: string;
+};
+
+export default function OutfitComposer({ weatherSummary = "", apiKey }: OutfitComposerProps) {
   const [items, setItems] = useState<PhotoRecord[]>([]);
   const [pick, setPick] = useState<Record<string, boolean>>({});
   const [prompt, setPrompt] = useState(
-    '아래 옷 사진들로 코디 3세트를 JSON 한 줄씩 제안해줘: {"set":n,"items":["<파일ID>",...],"reason":"..."}'
+    "이 옷 사진들을 참고해서 오늘 날씨에 어울리는 코디 1세트를 제안해줘.새로운 아이템은 추가하지 말고, 사진 속 옷 조합만 고려해."
   );
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
+  // IndexedDB에서 이미지 불러오기
   useEffect(() => {
     (async () => {
       const all = await getAll();
@@ -62,18 +72,31 @@ export default function OutfitComposer() {
     })();
   }, []);
 
+  // 선택된 이미지 목록
   const selectedBlobs = useMemo(
-    () => items.filter(it => pick[it.meta.id]).map(it => it.blob),
+    () => items.filter((it) => pick[it.meta.id]).map((it) => it.blob),
     [items, pick]
   );
 
+  // ✅ GPT 분석 요청
   async function handleOutfit() {
-    if (!selectedBlobs.length) { alert("이미지를 선택하세요."); return; }
+    if (!selectedBlobs.length) {
+      alert("이미지를 선택하세요.");
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       setResponse("분석 중입니다...");
-      const text = await analyzeOutfits(selectedBlobs, prompt);
+
+      // ✅ 날씨 + API 키 반영
+      const text = await analyzeOutfits(selectedBlobs, prompt, {
+        apiKey,
+        weatherSummary,
+        maxImages: 6,
+        detail: "auto",
+      });
+
       setResponse(text);
     } catch (e: any) {
       setError(e?.message ?? "에러");
@@ -87,40 +110,102 @@ export default function OutfitComposer() {
     <div style={{ marginTop: "2rem" }}>
       <h2>코디 생성</h2>
 
+      {/* 프롬프트 입력 */}
       <div style={{ marginTop: 10 }}>
-        <label style={{ display: "block", fontSize: 12, opacity: 0.8, marginBottom: 4 }}>추가지시(옵션)</label>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            opacity: 0.8,
+            marginBottom: 4,
+          }}
+        >
+          추가지시(옵션)
+        </label>
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder='예) 미니멀/캠퍼스룩으로 추천'
-          style={{ width: '100%', maxWidth: 520, padding: '8px 10px' }}
+          placeholder="예) 미니멀/캠퍼스룩으로 추천"
+          style={{
+            width: "100%",
+            maxWidth: 520,
+            padding: "8px 10px",
+          }}
         />
       </div>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <button onClick={handleOutfit} disabled={loading || !selectedBlobs.length}>
+      {/* 날씨 프롬프트 미리보기 */}
+      {weatherSummary && (
+        <p style={{ marginTop: 8, fontSize: 13, opacity: 0.7 }}>
+          현재 날씨가 프롬프트에 자동 반영됩니다:  
+          <br />
+          <code>{weatherSummary}</code>
+        </p>
+      )}
+
+      {/* 실행 버튼 */}
+      <div
+        style={{
+          marginTop: 12,
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={handleOutfit}
+          disabled={loading || !selectedBlobs.length}
+        >
           {loading ? "분석 중..." : `코디 생성 (${selectedBlobs.length}장)`}
         </button>
       </div>
 
+      {/* 이미지 리스트 */}
       <ul
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-          gap: 10, listStyle: "none", padding: 0, marginTop: 14
+          gap: 10,
+          listStyle: "none",
+          padding: 0,
+          marginTop: 14,
         }}
       >
         {items.map((it) => (
-          <li key={it.meta.id} style={{ border: "1px solid #eee", borderRadius: 8, padding: 6 }}>
+          <li
+            key={it.meta.id}
+            style={{
+              border: "1px solid #eee",
+              borderRadius: 8,
+              padding: 6,
+            }}
+          >
             <Thumb blob={it.thumb ?? it.blob} alt={it.meta.name} height={100} />
-            <label style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+            <label
+              style={{
+                display: "flex",
+                gap: 6,
+                alignItems: "center",
+                marginTop: 6,
+              }}
+            >
               <input
                 type="checkbox"
                 checked={!!pick[it.meta.id]}
-                onChange={(e) => setPick(p => ({ ...p, [it.meta.id]: e.target.checked }))}
+                onChange={(e) =>
+                  setPick((p) => ({ ...p, [it.meta.id]: e.target.checked }))
+                }
               />
-              <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {it.meta.name}
               </span>
             </label>
@@ -128,6 +213,7 @@ export default function OutfitComposer() {
         ))}
       </ul>
 
+      {/* 결과 출력 */}
       {(response || error) && (
         <div style={{ marginTop: "1rem" }}>
           {error ? (
@@ -138,7 +224,8 @@ export default function OutfitComposer() {
           ) : (
             <>
               <h3>결과</h3>
-              <pre style={{ whiteSpace: "pre-wrap" }}>{response}</pre>
+              {/* ✅ pre 대신 p 사용 */}
+              <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{response}</p>
             </>
           )}
         </div>
