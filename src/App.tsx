@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Camera from "./Camera.tsx";
 import PhotoVault from './PhotoVault.tsx';
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
@@ -64,7 +63,6 @@ function App() {
           <div className="card">
             <div className="flex flex-col items-center justify-center">
 
-              <Camera />
               <PhotoVault />
           {/* <OutfitComposer/> --> OutfitComposerWithStyle  */}
           <OutfitComposerWithStyle />
