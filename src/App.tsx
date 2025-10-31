@@ -1,4 +1,5 @@
 
+import Camera from './Camera.tsx'
 import { useEffect, useState } from 'react';
 import { analyzeImage } from './api/openai'
 import "./App.css";
@@ -134,6 +135,7 @@ function App() {
 
 
           <ImageAnalyzer />
+          <Camera/>
           <Button onClick={() => captureImage}>
             Capture Image
           </Button>
