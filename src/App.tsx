@@ -68,8 +68,8 @@ function App() {
                       />
                   </div>
                 </main>
+                <WardrobeSelector/>
               </div>
-                  <WardrobeSelector/>
 
               {/* Settings Sheet Modal */}
               <SettingsSheet isOpen={isSettingsOpen} onClose={closeSettings} />
