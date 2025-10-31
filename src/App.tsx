@@ -6,6 +6,7 @@ import { base64logo } from "./logo.ts";
 import { ImageAnalyzer } from './ImageAnalyzer.tsx';
 import { WeatherWidget } from './WeatherWidget.tsx';
 import PhotoVault from './PhotoVault.tsx';
+import OutfitComposer from "./OutfitComposer";
 
 function submit(image: string) {
   console.log(image);
@@ -42,6 +43,7 @@ function App() {
             Submit
           </Button>
           <PhotoVault/>
+          <OutfitComposer/>
         </div>
       </div>
     </>
