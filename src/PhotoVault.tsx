@@ -134,58 +134,82 @@ async function addSelected() {
     URL.revokeObjectURL(url);
   }
 
-  return (
-    <div style={{ fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", padding: 12 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onSelect}
-            onInput={onSelect}
-          />
-          <button onClick={addSelected} disabled={!selected.length}>
-            {selected.length ? `추가 (${selected.length})` : "추가"}
-          </button>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#666" }}>
-          {usageInfo || "저장공간 계산 중..."}
-        </span>
-      </div>
+  const CATS = ["상의","하의","겉옷","모자","양말","신발","액세서리","미분류"] as const;
+  type Cat = (typeof CATS)[number];
 
+  const groups: Record<Cat, PhotoRecord[]> = CATS.reduce((acc, c) => ({...acc, [c]: []}), {} as any);
+  for (const it of items) {
+  const cat = (it.meta.tags?.[0] as Cat) || "미분류";
+  if (CATS.includes(cat)) groups[cat].push(it);
+  else groups["미분류"].push(it);
+  }
+  
+  return (
+  <div style={{ fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", padding: 12 }}>
+    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={onSelect}
+        onInput={onSelect}
+      />
+      <button onClick={addSelected} disabled={!selected.length}>
+        {selected.length ? `추가 (${selected.length})` : "추가"}
+      </button>
+      <span style={{ marginLeft: "auto", fontSize: 12, color: "#666" }}>
+        {usageInfo || "저장공간 계산 중..."}
+      </span>
+    </div>
+
+    {CATS.map(cat => (
+  groups[cat].length > 0 && (
+    <section key={cat} style={{marginBottom:16}}>
+      <h4 style={{color:"#ccc", fontSize:12, margin:"8px 0"}}>{cat}</h4>
       <ul
         style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(auto-fill, minmax(${THUMB_VIEW}px, 1fr))`,
-          gap: 8,
-          listStyle: "none",
-          padding: 0,
-          margin: 0
+          display:"grid",
+          gridTemplateColumns:`repeat(auto-fill, minmax(${THUMB_VIEW}px, 1fr))`,
+          gap:8, listStyle:"none", padding:0, margin:0
         }}
       >
-        {items.map((it) => {
+        {groups[cat].map(it => {
           const url = URL.createObjectURL(it.thumb ?? it.blob);
           return (
-            <li key={it.meta.id} style={{ padding: 4 }}>
+            <li key={it.meta.id} style={{padding:4}}>
               <img
                 src={url}
                 alt={it.meta.name}
-                width={THUMB_VIEW}
-                height={THUMB_VIEW}
-                style={{ width: THUMB_VIEW, height: THUMB_VIEW, objectFit: "cover", borderRadius: 6, display: "block" }}
+                width={THUMB_VIEW} height={THUMB_VIEW}
+                style={{width:THUMB_VIEW, height:THUMB_VIEW, objectFit:"cover", borderRadius:6, display:"block"}}
                 onLoad={() => URL.revokeObjectURL(url)}
               />
-              <div
-                title={it.meta.name}
-                style={{ fontSize: 11, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-              >
+              <div title={it.meta.name}
+                   style={{fontSize:11, marginTop:4, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>
                 {it.meta.name}
               </div>
-              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                <button onClick={() => download(it)} style={{ flex: 1, fontSize: 11 }}>다운</button>
+
+              {/* 카테고리 선택 드롭다운(변경 시 DB 갱신) */}
+              <select
+                value={it.meta.tags?.[0] ?? ""}
+                onChange={async (e) => {
+                  const category = e.target.value as Cat;
+                  const updated = { ...it, meta: { ...it.meta, tags: category ? [category] : [] } };
+                  await putPhoto(updated);
+                  await refresh();
+                }}
+                style={{ width:"100%", fontSize:11, backgroundColor: "#1e1e1e", marginTop:4, borderRadius:4, padding:"2px 4px" }}
+              >
+                <option value="">카테고리 선택</option>
+                {CATS.filter(c => c !== "미분류").map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+
+              <div style={{ display:"flex", gap:6, marginTop:4 }}>
+                <button onClick={() => download(it)} style={{ flex:1, fontSize:11 }}>다운</button>
                 <button
                   onClick={async () => { await remove(it.meta.id); await refresh(); }}
-                  style={{ flex: 1, fontSize: 11, color: "#c00" }}
+                  style={{ flex:1, fontSize:11, color:"#c00" }}
                 >
                   삭제
                 </button>
@@ -194,7 +218,10 @@ async function addSelected() {
           );
         })}
       </ul>
-    </div>
-  );
-}
+    </section>
+  )
+))}
 
+  </div>
+);
+}
