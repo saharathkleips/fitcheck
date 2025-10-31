@@ -5,6 +5,82 @@ import "./App.css";
 import { Button } from "./components/ui/button.tsx";
 import { Input } from "./components/ui/input.tsx";
 import { base64logo } from "./logo.ts";
+/* ===== 날씨 위젯: 함수(컴포넌트)로 분리 ===== */
+function WeatherWidget({ fallbackCity = "Seoul" }: { fallbackCity?: string }) {
+  const [data, setData] = useState<TodayWeather | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        // 1) 브라우저 위치 권한 시도 (실패/거부 시 도시명으로 조회)
+        const getByGeo = () =>
+          new Promise<TodayWeather>((resolve, reject) => {
+            if (!("geolocation" in navigator)) return reject(new Error("no geolocation"));
+            const tid = setTimeout(() => reject(new Error("geolocation timeout")), 5000);
+            navigator.geolocation.getCurrentPosition(
+              async pos => {
+                clearTimeout(tid);
+                resolve(await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude));
+              },
+              err => {
+                clearTimeout(tid);
+                reject(err);
+              },
+              { enableHighAccuracy: false, timeout: 5000, maximumAge: 60_000 }
+            );
+          });
+
+        let w: TodayWeather;
+        try {
+          w = await getByGeo();
+        } catch {
+          w = await fetchWeatherByCity(fallbackCity);
+        }
+
+        if (!cancelled) {
+          setData(w);
+          setError(null);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? "날씨를 불러오지 못했어요.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [fallbackCity]);
+
+  if (loading) return <div style={{ marginTop: 24 }}><h2>오늘의 날씨</h2><p>불러오는 중…</p></div>;
+  if (error)   return <div style={{ marginTop: 24, color: "crimson" }}><h2>오늘의 날씨</h2><p>에러: {error}</p></div>;
+  if (!data)   return null;
+
+  const iconUrl = `https://openweathermap.org/img/wn/${data.icon}@2x.png`;
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <h2>오늘의 날씨</h2>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 16px", border: "1px solid #eee", borderRadius: 12
+      }}>
+        <img src={iconUrl} alt={data.description} width={64} height={64} />
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>{data.city}</div>
+          <div style={{ fontSize: 28 }}>{Math.round(data.temp)}°C <span style={{ fontSize: 14, opacity: .7 }}>체감 {Math.round(data.feelsLike)}°C</span></div>
+          <div style={{ opacity: .85 }}>{data.description}</div>
+          <div style={{ fontSize: 13, opacity: .7 }}>습도 {data.humidity}% · 바람 {data.windSpeed} m/s</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ✅ 이미지 분석 기능을 별도 함수(컴포넌트)로 분리
 function ImageAnalyzer() {
@@ -131,7 +207,7 @@ function App() {
         <div className="flex flex-col items-center justify-center">
           <img className="max-h-100 max-w-100" src={base64logo} />
 
-
+          <WeatherWidget fallbackCity="Seoul" />
           <ImageAnalyzer />
           <Button onClick={() => captureImage}>
             Capture Image
