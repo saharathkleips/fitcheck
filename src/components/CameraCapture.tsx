@@ -1,10 +1,9 @@
-import { AnalyzeButton } from "@/AnalyzeButton";
+import { AnalyzeOutfitButton } from "@/components/AnalyzeOutfitButton";
 import { useFitCheck } from "@/hooks/useFitCheck";
 import { Camera } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type CameraState = "no-permission" | "ask-permission" | "video" | "captured";
-type CapturedImageState = string | null;
 
 export function CameraCapture() {
   // States: 'idle' (default/permission needed), 'streaming', 'captured'
@@ -12,7 +11,7 @@ export function CameraCapture() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  const {clothing, setClothing} = useFitCheck();
+  const {picture: clothing, setPicture: setClothing} = useFitCheck();
 
   const requestPermission = async () => {
     try {
@@ -125,7 +124,7 @@ export function CameraCapture() {
         </button>
 
         {/* Submit Button (Disabled unless image is captured) */}
-        <AnalyzeButton/>
+        <AnalyzeOutfitButton/>
       </div>
     </div>
   );

@@ -1,23 +1,19 @@
 import { useState } from "react";
-import { Camera } from "lucide-react";
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
 import { CameraCapture } from "./components/CameraCapture.tsx";
 import { WeatherSummary } from "./components/WeatherSummary.tsx";
-import OutfitComposerWithStyle from "./components/OutfitComposerWithStyle.tsx";
+import { StyleSelector } from "./components/StyleSelector.tsx";
 import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
-import { WardrobeSelector } from "./components/Wardrobe.tsx";
-import PhotoVault from "./PhotoVault.tsx";
+import { Prompt } from "./components/Prompt.tsx";
+import { AnalyzeWardrobeButton } from "./components/AnalyzeWardrobeButton.tsx";
+import { Wardrobe } from "./components/Wardrobe.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // ✅ 사진 선택 결과(Blob[])와 날씨 요약 문자열 상태
-  const [selectedBlobs, setSelectedBlobs] = useState<Blob[]>([]);
-  const [weatherSummary, setWeatherSummary] = useState<string>("");
 
   const openSettings = () => setIsSettingsOpen(true);
   const closeSettings = () => setIsSettingsOpen(false);
@@ -49,29 +45,22 @@ function App() {
                   <div className="lg:col-span-2 space-y-6">
                     <CameraCapture />
                     <AssessmentSummary />
-
                   </div>
 
                   {/* Right Column: Weather + Style & Outfit Compose */}
                   <div className="lg:col-span-1 space-y-6">
-                    {/* ✅ 날씨 요약을 상위로 올려 OutfitComposer에 전달 */}
-                    <WeatherSummary
-                      // 지원 시: 요약 문자열 콜백
-                      onReady={(summary: string) => setWeatherSummary(summary)}
-                      // 필요하다면 fallbackCity 같은 prop도 함께 전달 가능
-                    />
+                    <WeatherSummary />
 
-                    {/* ✅ 선택된 이미지 & 날씨를 사용해 코디 생성 */}
-                    <OutfitComposerWithStyle
-                      selectedBlobs={selectedBlobs}
-                      weatherSummary={weatherSummary}
-                      // apiKey={...}  // 필요 시 주입, 없으면 openai.ts의 env 사용
-                      />
+                    <StyleSelector />
                   </div>
                 <WardrobeSelector/>
                 </main>
-                <PhotoVault/>
-                
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                <Wardrobe />
+                <Prompt />
+                <AnalyzeWardrobeButton />
+                </div>
+
               </div>
 
               {/* Settings Sheet Modal */}
