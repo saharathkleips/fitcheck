@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Camera from "./Camera.tsx";
+import { Camera } from "lucide-react";
 import PhotoVault from './PhotoVault.tsx';
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
