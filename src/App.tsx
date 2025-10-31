@@ -62,7 +62,6 @@ function App() {
 
           <div className="card">
             <div className="flex flex-col items-center justify-center">
-
               <PhotoVault />
           {/* <OutfitComposer/> --> OutfitComposerWithStyle  */}
           <OutfitComposerWithStyle />
