@@ -11,7 +11,13 @@ import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import PhotoSelector from "./components/PhotoSelector.tsx";
+=======
+import { WardrobeSelector } from "./components/Wardrobe.tsx";
+
+
+>>>>>>> Stashed changes
 =======
 import { WardrobeSelector } from "./components/Wardrobe.tsx";
 
