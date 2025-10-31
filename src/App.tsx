@@ -10,6 +10,7 @@ import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
 import { WardrobeSelector } from "./components/Wardrobe.tsx";
+import PhotoVault from "./PhotoVault.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -68,7 +69,8 @@ function App() {
                       />
                   </div>
                 </main>
-                <WardrobeSelector/>
+                <PhotoVault/>
+                
               </div>
 
               {/* Settings Sheet Modal */}
