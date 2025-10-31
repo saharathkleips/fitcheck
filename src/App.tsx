@@ -1,4 +1,5 @@
 
+import Camera from './Camera.tsx'
 import { useEffect, useState } from 'react';
 import { analyzeImage } from './api/openai'
 import "./App.css";
@@ -123,7 +124,8 @@ function ImageAnalyzer() {
       const result = await analyzeImage(file) // 기본 프롬프트 사용
       // const result = await analyzeImage(file, prompt) // <- 이런 식으로 확장 가능
       setResponse(result)
-    } catch (err) {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (err: any) {
       setError(err?.message ?? '알 수 없는 에러가 발생했습니다.')
       setResponse('')
     } finally {
@@ -209,6 +211,7 @@ function App() {
 
           <WeatherWidget fallbackCity="Seoul" />
           <ImageAnalyzer />
+          <Camera/>
           <Button onClick={() => captureImage}>
             Capture Image
           </Button>
