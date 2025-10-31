@@ -1,5 +1,5 @@
 import { Camera, Send } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 type CameraState = "no-permission" | "ask-permission" | "video" | "captured";
 type CapturedImageState = string | null;
@@ -7,14 +7,36 @@ type CapturedImageState = string | null;
 export function CameraCapture() {
   // States: 'idle' (default/permission needed), 'streaming', 'captured'
   const [status, setStatus] = useState<CameraState>("ask-permission");
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<CapturedImageState>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const requestPermission = () => {
-    setStatus("video");
+
+  const requestPermission = async () => {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      setStream(s);
+      setStatus("video");
+    } catch (e) {
+    console.error(e);
+    }
   };
 
   const captureImage = () => {
-    setCapturedImage("data:image/png;base64,placeholder-image-data");
+    const v = videoRef.current!;
+    const c = document.createElement("canvas"); // 임시 캔버스
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(v, 0, 0, c.width, c.height);
+
+    const imgData = c.toDataURL("image/jpeg"); // Base64 이미지
+    setCapturedImage(imgData); // 상태에 저장 (또는 즉시 사용)
     setStatus("captured");
   };
 
@@ -23,6 +45,19 @@ export function CameraCapture() {
     setStatus("video");
   };
 
+  useEffect(() => {
+    if (status !== "video") return;
+    const v = videoRef.current;
+    if (!v || !stream) return;
+    v.srcObject = stream; 
+    v.muted = true;
+    // @ts-ignore
+    v.playsInline = true;
+    v.play().catch(() => {});
+    return () => { v.srcObject = null; };
+  }, [status, stream])
+
+
   let captureButtonText;
   let captureButtonAction;
 
@@ -30,10 +65,11 @@ export function CameraCapture() {
     captureButtonText = "카메라 허용";
     captureButtonAction = requestPermission;
   } else if (status === "video") {
-    captureButtonText = "찍다";
+    captureButtonText = "촬영";
     captureButtonAction = captureImage;
+
   } else {
-    captureButtonText = "다시 찍다";
+    captureButtonText = "재촬영";
     captureButtonAction = retakeImage;
   }
 
@@ -43,21 +79,31 @@ export function CameraCapture() {
         <div className="aspect-video w-full bg-gray-900 flex flex-col items-center justify-center rounded-xl overflow-hidden shadow-inner border-2 border-dashed border-gray-600 p-8">
           <Camera className="w-12 h-12 text-gray-500 mb-3" />
           <span className="text-gray-400">
-            카메라 권한이 필요하다.
+            카메라 권한 필요
           </span>
         </div>
       );
     } else if (status === "video") {
       return (
         <div className="aspect-video w-full bg-black flex items-center justify-center rounded-xl overflow-hidden shadow-inner border border-gray-600">
-          <span className="text-gray-500">TODO: VIDEO COMPONENT</span>
+          <video 
+            ref = {videoRef}
+            autoPlay
+            playsInline
+            muted
+            className = "w-full h-full object-cover"
+            />
         </div>
       );
     } else {
       // 'captured'
       return (
         <div className="aspect-video w-full bg-gray-950 flex items-center justify-center rounded-xl overflow-hidden shadow-inner border border-gray-500">
-          <span className="text-cyan-400 font-bold text-lg">TODO: CAPTURED IMAGE</span>
+          {capturedImage && (
+            <img
+              src={capturedImage} className="w-full h-full object-cover rounded-xl" 
+            />
+          )}
         </div>
       );
     }
