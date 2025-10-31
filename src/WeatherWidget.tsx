@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { fetchWeatherByCoords, fetchWeatherByCity, type TodayWeather } from "./api/weather";
 
 export function WeatherWidget({ fallbackCity = "Seoul" }: { fallbackCity?: string }) {

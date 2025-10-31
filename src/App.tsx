@@ -5,6 +5,7 @@ import { Input } from "./components/ui/input.tsx";
 import { base64logo } from "./logo.ts";
 import { ImageAnalyzer } from './ImageAnalyzer.tsx';
 import { WeatherWidget } from './WeatherWidget.tsx';
+import PhotoVault from './PhotoVault.tsx';
 
 function submit(image: string) {
   console.log(image);
@@ -40,6 +41,7 @@ function App() {
           >
             Submit
           </Button>
+          <PhotoVault/>
         </div>
       </div>
     </>
