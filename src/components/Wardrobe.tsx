@@ -31,7 +31,7 @@ const WardrobeItemCard = ({ item, onDelete }: WardrobeItemCardProps) => {
         // Wrapper for 16:9 aspect ratio (9/16 = 56.25%)
         <div className="relative w-full pb-[56.25%]"> 
             <div 
-                className="absolute inset-0 bg-gray-700 rounded-xl overflow-hidden shadow-lg border-2 border-gray-600 hover:border-fuchsia-700 transition-all duration-200"
+                className="absolute inset-0 bg-gray-700 rounded-xl overflow-visible shadow-lg border-2 border-gray-600 hover:border-fuchsia-700 transition-all duration-200"
             >
                 {/* Image Preview (Square) - Left side */}
                 <div className="absolute top-0 left-0 h-full w-1/2 p-2">
@@ -147,7 +147,7 @@ export const WardrobeSelector = () => {
     }, []);
 
     return (
-        <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+        <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 flex flex-col">
             <h2 className="text-xl font-semibold text-cyan-400 mb-4 flex items-center">
                 <Shirt className="w-5 h-5 mr-2" /> 디지털 옷장
             </h2>

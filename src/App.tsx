@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
-import PhotoVault from './PhotoVault.tsx';
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
 import { Settings } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
@@ -11,7 +10,7 @@ import { AssessmentSummary } from "./components/AssessmentSummary.tsx";
 import { AssessmentProvider } from "./components/providers/AssessmentProvider.tsx";
 import { FitCheckProvider } from "./components/providers/FitCheckProvider.tsx";
 import { WardrobeSelector } from "./components/Wardrobe.tsx";
-import PhotoSelector from "./components/PhotoSelector.tsx";
+import PhotoVault from "./PhotoVault.tsx";
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -51,12 +50,6 @@ function App() {
                     <CameraCapture />
                     <AssessmentSummary />
 
-                    {/* ✅ 사진 업로드 & 선택 (여기서 선택된 Blob[]을 상태로 보관) */}
-                    {/* <PhotoSelector
-                      title="Your Wardrobe Photos"
-                      onChange={setSelectedBlobs}
-                    /> */}
-
                   </div>
 
                   {/* Right Column: Weather + Style & Outfit Compose */}
@@ -73,16 +66,17 @@ function App() {
                       selectedBlobs={selectedBlobs}
                       weatherSummary={weatherSummary}
                       // apiKey={...}  // 필요 시 주입, 없으면 openai.ts의 env 사용
-                    />
+                      />
                   </div>
                 <WardrobeSelector/>
                 </main>
+                <PhotoVault/>
+                
               </div>
 
               {/* Settings Sheet Modal */}
               <SettingsSheet isOpen={isSettingsOpen} onClose={closeSettings} />
-
-</div>
+            </div>
           </FitCheckProvider>
         </AssessmentProvider>
       </SettingsProvider>
