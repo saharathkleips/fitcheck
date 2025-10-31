@@ -1,110 +1,68 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { analyzeOutfits } from "../api/openai";
-import { useSettings } from "../hooks/useSettings";
-import { useWeather } from "../hooks/useWeather";
 import { summarizeWeather } from "../lib/utils";
+import { Sparkles } from "lucide-react";
 
-type PhotoMeta = { id: string; name: string; type: string; size: number; lastModified: number; tags?: string[] };
-type PhotoRecord = { meta: PhotoMeta; blob: Blob; thumb?: Blob };
+type Props = {
+  selectedBlobs: Blob[];          // ✅ 왼쪽 선택 컴포넌트에서 주입
+  weatherSummary?: string;        // 선택(이미 문자열이면 그대로 사용)
+  apiKey?: string;                // OpenAI 키 (없으면 env 사용)
+};
 
-// IndexedDB 열기
-async function openDB(): Promise<IDBDatabase> {
-  return await new Promise((res, rej) => {
-    const req = indexedDB.open("photos-db", 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains("photos"))
-        db.createObjectStore("photos", { keyPath: "meta.id" });
-    };
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
+type StyleCard = { id: string; name: string; imageUrl: string };
+const STYLE_CARDS: StyleCard[] = [
+  { id: "s-minimal", name: "미니멀",  imageUrl: "https://placehold.co/80x80/111/fff?text=MIN" },
+  { id: "s-street",  name: "스트릿",  imageUrl: "https://placehold.co/80x80/222/fff?text=ST"  },
+  { id: "s-formal",  name: "포멀",    imageUrl: "https://placehold.co/80x80/333/fff?text=FML" },
+  { id: "s-vintage", name: "빈티지",  imageUrl: "https://placehold.co/80x80/884/fff?text=VTG" },
+  { id: "s-sporty",  name: "스포티",  imageUrl: "https://placehold.co/80x80/0a7/fff?text=SPT" },
+  { id: "s-feminine",name: "페미닌",  imageUrl: "https://placehold.co/80x80/e66/fff?text=FEM" },
+  { id: "s-dandy",   name: "댄디",    imageUrl: "https://placehold.co/80x80/06c/fff?text=DND" },
+  { id: "s-casual",  name: "캐주얼",  imageUrl: "https://placehold.co/80x80/555/fff?text=CSL" },
+];
 
-// IndexedDB 모든 이미지 불러오기
-async function getAll(): Promise<PhotoRecord[]> {
-  const db = await openDB();
-  return await new Promise((res, rej) => {
-    const tx = db.transaction("photos", "readonly");
-    const req = tx.objectStore("photos").getAll();
-    req.onsuccess = () => res(req.result as PhotoRecord[]);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-// 썸네일 렌더링
-function Thumb({ blob, alt, height = 100 }: { blob?: Blob; alt: string; height?: number }) {
-  const [url, setUrl] = useState<string>();
-  useEffect(() => {
-    if (!blob) { setUrl(undefined); return; }
-    const u = URL.createObjectURL(blob);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [blob]);
-  return (
-    <img
-      src={url}
-      alt={alt}
-      style={{ width: "100%", height, objectFit: "cover", borderRadius: 6 }}
-    />
-  );
-}
-
-export default function OutfitComposerWithStyle() {
-  const { gptApiKey, weatherApiKey } = useSettings();
-  const { weather } = useWeather(weatherApiKey);
-
-  const [items, setItems] = useState<PhotoRecord[]>([]);
-  const [pick, setPick] = useState<Record<string, boolean>>({});
-  const [styleChoice, setStyleChoice] = useState("미니멀");
+export default function OutfitComposerWithStyle({
+  selectedBlobs,
+  weatherSummary,
+  apiKey,
+}: Props) {
+  const [styleId, setStyleId] = useState<string>(STYLE_CARDS[0].id);
   const [prompt, setPrompt] = useState(
     "사진에 나온 옷들만 사용해서 오늘 날씨와 선택한 스타일에 어울리는 코디 1세트를 제안해줘. 새로운 아이템은 추가하지 말고 사진 속 옷 조합만 고려해."
   );
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<string>("");
+  const [response, setResponse] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // IndexedDB에서 이미지 불러오기
-  useEffect(() => {
-    (async () => {
-      const all = await getAll();
-      all.sort((a, b) => b.meta.lastModified - a.meta.lastModified);
-      setItems(all);
-    })();
-  }, []);
-
-  const selectedBlobs = useMemo(
-    () => items.filter((it) => pick[it.meta.id]).map((it) => it.blob),
-    [items, pick]
+  const selectedStyle = useMemo(
+    () => STYLE_CARDS.find((s) => s.id === styleId)?.name ?? STYLE_CARDS[0].name,
+    [styleId]
   );
 
-  // ✅ GPT 분석 요청
   async function handleOutfit() {
-    if (!selectedBlobs.length) {
-      alert("이미지를 선택하세요.");
+    if (!selectedBlobs?.length) {
+      alert("왼쪽에서 이미지를 선택하세요.");
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
       setResponse("분석 중입니다...");
 
-      // ✅ 날씨 + 스타일 + 사용자 지시 결합
       const fullPrompt = `
 [Weather]
-${weather ? summarizeWeather(weather) : "날씨 정보 없음"}
+${weatherSummary || "날씨 정보 없음"}
 
 [Style]
-${styleChoice}
+${selectedStyle}
 
 [Instruction]
 ${prompt}
-`;
+      `.trim();
 
       const text = await analyzeOutfits(selectedBlobs, fullPrompt, {
-        apiKey: gptApiKey,
-        weatherSummary: weather ? summarizeWeather(weather) : undefined,
+        apiKey,
+        weatherSummary,
         maxImages: 6,
         detail: "auto",
       });
@@ -119,131 +77,74 @@ ${prompt}
   }
 
   return (
-    <div style={{ marginTop: "2rem" }}>
-      <h2>스타일 기반 코디 생성</h2>
+    <div className="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+      <h2 className="text-xl font-semibold text-cyan-400 mb-4">Select Context Item</h2>
 
-      {/* ✅ 스타일 선택 */}
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: 13, marginRight: 8 }}>스타일 선택:</label>
-        <select
-          value={styleChoice}
-          onChange={(e) => setStyleChoice(e.target.value)}
-          style={{ padding: "6px 10px",backgroundColor:"#1e1e1e", borderRadius: 6 }}
-        >
-          <option value="미니멀">미니멀</option>
-          <option value="스트릿">스트릿</option>
-          <option value="포멀">포멀</option>
-          <option value="빈티지">빈티지</option>
-          <option value="스포티">스포티</option>
-          <option value="페미닌">페미닌</option>
-          <option value="댄디">댄디</option>
-          <option value="캐주얼">캐주얼</option>
-        </select>
+      {/* 스타일 카드 */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+        {STYLE_CARDS.map((card) => (
+          <button
+            key={card.id}
+            onClick={() => setStyleId(card.id)}
+            className={`w-full text-left flex items-center p-3 rounded-lg transition-colors border-2
+              ${card.id === styleId
+                ? "bg-fuchsia-800/40 border-fuchsia-500 text-white"
+                : "bg-gray-700/50 hover:bg-gray-700 border-gray-700 text-gray-300"
+              }`}
+          >
+            <img
+              src={card.imageUrl}
+              alt={card.name}
+              className="w-10 h-10 object-cover rounded-md mr-3 shadow-md"
+            />
+            <span className="font-medium flex-1">{card.name}</span>
+            {card.id === styleId && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-600 text-white">
+                SELECTED
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* 추가 지시 */}
-      <div style={{ marginTop: 10 }}>
-        <label
-          style={{
-            display: "block",
-            fontSize: 12,
-            opacity: 0.8,
-            marginBottom: 4,
-          }}
-        >
-          추가지시(옵션)
-        </label>
+      {/* 추가 지시 + 실행 버튼 */}
+      <div className="mt-4 pt-4 border-t border-gray-700">
+        <label className="block text-xs text-gray-400 mb-1">추가지시(옵션)</label>
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="예) 좀 더 부드러운 느낌으로 추천"
-          style={{
-            width: "100%",
-            maxWidth: 520,
-            padding: "8px 10px",
-          }}
+          placeholder="예) 톤다운 느낌으로"
+          className="w-full rounded-md px-3 py-2 bg-gray-900/70 border border-gray-700 text-gray-100"
         />
-      </div>
-
-      {/* 실행 버튼 */}
-      <div
-        style={{
-          marginTop: 12,
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        <button onClick={handleOutfit} disabled={loading || !selectedBlobs.length}>
-          {loading ? "분석 중..." : `코디 생성 (${selectedBlobs.length}장)`}
+        <button
+          onClick={handleOutfit}
+          disabled={loading || !selectedBlobs?.length}
+          className={`mt-3 w-full flex items-center justify-center p-3 rounded-lg font-bold transition
+            ${loading || !selectedBlobs?.length
+              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+              : "bg-fuchsia-700 hover:bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-900/50"
+            }`}
+          title={!selectedBlobs?.length ? "왼쪽에서 사진을 선택하세요" : "코디 생성"}
+        >
+          <Sparkles className="w-5 h-5 mr-2" />
+          {loading ? "분석 중..." : "코디 생성"}
         </button>
       </div>
 
-      {/* 이미지 리스트 */}
-      <ul
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-          gap: 10,
-          listStyle: "none",
-          padding: 0,
-          marginTop: 14,
-        }}
-      >
-        {items.map((it) => (
-          <li
-            key={it.meta.id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 8,
-              padding: 6,
-            }}
-          >
-            <Thumb blob={it.thumb ?? it.blob} alt={it.meta.name} height={100} />
-            <label
-              style={{
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                marginTop: 6,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={!!pick[it.meta.id]}
-                onChange={(e) =>
-                  setPick((p) => ({ ...p, [it.meta.id]: e.target.checked }))
-                }
-              />
-              <span
-                style={{
-                  fontSize: 12,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {it.meta.name}
-              </span>
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      {/* 결과 출력 */}
       {(response || error) && (
-        <div style={{ marginTop: "1rem" }}>
+        <div className="mt-4">
           {error ? (
             <>
-              <h3>에러</h3>
-              <p style={{ color: "crimson" }}>{error}</p>
+              <h3 className="font-semibold text-red-400 mb-1">에러</h3>
+              <p className="text-red-300">{error}</p>
             </>
           ) : (
             <>
-              <h3>결과</h3>
-              <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{response}</p>
+              <h3 className="font-semibold text-gray-100 mb-1">결과</h3>
+              <p className="text-gray-100" style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                {response}
+              </p>
             </>
           )}
         </div>
