@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "./components/ui/button";
 
 export default function Camera(){
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -45,8 +46,8 @@ export default function Camera(){
     <div style={{ display: "grid", gap: 12, maxWidth: 480 }}>
       <video ref={videoRef} playsInline muted style={{ width: "100%", background: "#000", borderRadius: 8 }} />
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={startCamera}>카메라 시작</button>
-        <button onClick={takePhoto} disabled={!stream}>사진 찍기</button>
+        <Button onClick={startCamera}>카메라 시작</Button>
+        <Button onClick={takePhoto} disabled={!stream}>사진 찍기</Button>
       </div>
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
