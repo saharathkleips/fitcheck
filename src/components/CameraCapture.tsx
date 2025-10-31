@@ -1,4 +1,5 @@
 import { AnalyzeButton } from "@/AnalyzeButton";
+import { useFitCheck } from "@/hooks/useFitCheck";
 import { Camera } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
@@ -9,9 +10,9 @@ export function CameraCapture() {
   // States: 'idle' (default/permission needed), 'streaming', 'captured'
   const [status, setStatus] = useState<CameraState>("ask-permission");
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [capturedImage, setCapturedImage] = useState<CapturedImageState>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  
+  const {clothing, setClothing} = useFitCheck();
 
   const requestPermission = async () => {
     try {
@@ -36,12 +37,12 @@ export function CameraCapture() {
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const imgData = c.toDataURL("image/jpeg"); // Base64 이미지
-    setCapturedImage(imgData); // 상태에 저장 (또는 즉시 사용)
+    setClothing(imgData);
     setStatus("captured");
   };
 
   const retakeImage = () => {
-    setCapturedImage(null);
+    setClothing(null);
     setStatus("video");
   };
 
@@ -98,9 +99,9 @@ export function CameraCapture() {
       // 'captured'
       return (
         <div className="aspect-video w-full bg-gray-950 flex items-center justify-center rounded-xl overflow-hidden shadow-inner border border-gray-500">
-          {capturedImage && (
+          {clothing && (
             <img
-              src={capturedImage} className="w-full h-full object-cover rounded-xl" 
+              src={clothing} className="w-full h-full object-cover rounded-xl" 
             />
           )}
         </div>
@@ -124,7 +125,7 @@ export function CameraCapture() {
         </button>
 
         {/* Submit Button (Disabled unless image is captured) */}
-        <AnalyzeButton file={capturedImage} prompt= "이 이미지의 내용을 설명해줘." />
+        <AnalyzeButton/>
       </div>
     </div>
   );

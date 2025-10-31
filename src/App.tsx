@@ -1,7 +1,7 @@
 import { useState } from "react";
 import PhotoVault from './PhotoVault.tsx';
 import { SettingsProvider } from "./components/providers/SettingsProvider.tsx";
-import { Settings } from "lucide-react";
+import { Settings, Upload } from "lucide-react";
 import { SettingsSheet } from "./components/SettingsSheet.tsx";
 import { CameraCapture } from "./components/CameraCapture.tsx";
 import { WeatherSummary } from "./components/WeatherSummary.tsx";

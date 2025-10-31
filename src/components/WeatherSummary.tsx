@@ -1,3 +1,4 @@
+import { useFitCheck } from "@/hooks/useFitCheck";
 import { useSettings } from "@/hooks/useSettings";
 import { useWeather } from "@/hooks/useWeather";
 import { CloudRain, Droplet, Sun, Wind } from "lucide-react";
@@ -5,6 +6,9 @@ import { CloudRain, Droplet, Sun, Wind } from "lucide-react";
 export function WeatherSummary() {
   const { weatherApiKey } = useSettings();
   const { weather } = useWeather(weatherApiKey);
+  const { setWeather } = useFitCheck();
+
+  setWeather(weather);
 
   const WeatherIcon =
     weather?.description.toLowerCase().includes("rain") ||

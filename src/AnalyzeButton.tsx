@@ -5,25 +5,18 @@ import { useWeather } from "./hooks/useWeather";
 import { summarizeWeather } from "./lib/utils";
 import { useAssessment } from "./hooks/useAssessment";
 import { Send } from "lucide-react";
+import { useFitCheck } from "./hooks/useFitCheck";
 
-// The necessary props are now passed from the parent/context
-interface AnalyzeButtonProps {
-  file: string | null;
-  prompt: string;
-}
-
-export function AnalyzeButton({
-  file,
-  prompt,
-}: AnalyzeButtonProps) {
+export function AnalyzeButton() {
   const { gptApiKey, weatherApiKey } = useSettings();
   const { weather } = useWeather(weatherApiKey);
   const { setAssessment } = useAssessment();
+  const { clothing, prompt } = useFitCheck();
 
   const [loading, setLoading] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!file) {
+    if (!clothing) {
       console.error("No file");
       return;
     }
@@ -40,7 +33,7 @@ export function AnalyzeButton({
         .filter(Boolean)
         .join("\n\n");
 
-      const result = await analyzeImage(gptApiKey, file, finalPrompt);
+      const result = await analyzeImage(gptApiKey, clothing, finalPrompt);
 
       setAssessment(result);
     } catch (err) {
@@ -54,7 +47,7 @@ export function AnalyzeButton({
   return (
     <button
       onClick={handleAnalyze}
-      disabled={loading || !file}
+      disabled={loading || !clothing}
       className="flex-1 flex items-center justify-center p-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition transform hover:scale-[1.02] shadow-lg shadow-cyan-900/50 disabled:bg-gray-700 disabled:text-gray-400 disabled:shadow-none"
     >
       <Send className="w-5 h-5 mr-2" />
