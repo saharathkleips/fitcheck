@@ -22,19 +22,34 @@ export async function analyzeImage(file: File, prompt = "이 이미지의 내용
   };
 }
   
+// src/api/openai.ts
 export async function analyzeOutfits(
   filesOrBlobs: (File | Blob)[],
-  prompt = '아래 옷 사진들로 코디 3세트를 JSON 한 줄씩 제안해줘: {"set":n,"items":["<파일ID>",...],"reason":"..."}',
-  opts?: { apiKey?: string; maxImages?: number; detail?: "low" | "high" | "auto" }
+  prompt = '아래 옷 사진들로 코디 1세트를 제안해줘.',
+  opts?: { 
+    apiKey?: string; 
+    maxImages?: number; 
+    detail?: "low" | "high" | "auto";
+    weatherSummary?: string; // ✅ 날씨 정보 추가
+  }
 ) {
-
   const max = Math.min(filesOrBlobs.length, opts?.maxImages ?? 6);
   const detail = opts?.detail ?? "auto";
+  const apiKey = opts?.apiKey || import.meta.env.VITE_OPENAI_API_KEY;
+  const weatherSummary = opts?.weatherSummary ?? "";
+
+  if (!apiKey) throw new Error("OpenAI API Key가 없습니다. .env 또는 입력값을 확인하세요.");
+
+  // ✅ 날씨 정보를 프롬프트에 자동 추가
+  const finalPrompt = [
+    weatherSummary ? `[Weather]\n${weatherSummary}` : "",
+    prompt,
+  ].filter(Boolean).join("\n\n");
 
   const images = [];
   for (let i = 0; i < max; i++) {
     const f = filesOrBlobs[i];
-    const dataUrl = await blobToDataURL(await maybeCompressToJpeg(f)); // 전송량 절감
+    const dataUrl = await blobToDataURL(await maybeCompressToJpeg(f));
     images.push({
       type: "image_url",
       image_url: { url: dataUrl, detail } as const,
@@ -47,20 +62,18 @@ export async function analyzeOutfits(
       {
         role: "user",
         content: [
-          { type: "text", text: prompt },
+          { type: "text", text: finalPrompt },
           ...images,
         ],
       },
     ],
   };
 
-  
-
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   });
@@ -69,8 +82,24 @@ export async function analyzeOutfits(
     const err = await res.text();
     throw new Error(`OpenAI API error: ${err}`);
   }
+
   const data = await res.json();
-  return data.choices[0]?.message?.content ?? "";
+  const raw = data.choices[0]?.message?.content ?? "";
+
+  // ✅ JSON, 코드블록, 따옴표 제거
+  return cleanResponse(raw);
+}
+
+
+// GPT 응답 정제 (JSON/따옴표/코드블록 제거)
+function cleanResponse(text: string): string {
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/```(json|JSON)?([\s\S]*?)```/g, "$2");
+  cleaned = cleaned.replace(/^\{[\s\S]*\}$/, "");
+  cleaned = cleaned.replace(/^\[[\s\S]*\]$/, "");
+  cleaned = cleaned.replace(/["{}]/g, "");
+  cleaned = cleaned.replace(/\n{2,}/g, "\n").trim();
+  return cleaned;
 }
 
 
